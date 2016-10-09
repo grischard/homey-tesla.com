@@ -1,7 +1,8 @@
-"use strict";
+'use strict'
+var Geofences = require('./lib/geofences.js')
 
-function init() {
-  console.log('initiation')
+var self = module.exports = { // eslint-disable-line
+  init: function () {
+    Geofences.init()
+  } // end of module init function
 }
-
-module.exports.init = init;

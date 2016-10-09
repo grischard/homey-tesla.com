@@ -1,7 +1,7 @@
 # homey-tesla.com
 Homey App: Control your Tesla Model S
 
-# Aplha version under construction
+# Alpha version under construction
 
 #Disclaimer
 

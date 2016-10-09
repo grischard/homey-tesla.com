@@ -193,6 +193,18 @@ function initiateTracking () {
     Homey.manager('settings').set('teslaLog', debugLog)
   })
 
+  // >> temp code
+  Object.keys(trackers).forEach(function (trackerId) {
+    teslaApi.getDriveState(trackerId).then(function (state) {
+      trackers[trackerId].location = {
+        place: 'straat',
+        city: 'plaats',
+        lat: state.latitude,
+        lng: state.longitude
+      }
+    })
+  })
+
   if (!settings.polling) return TeslaDebugLog('  polling disabled in settings')
 
   Object.keys(trackers).forEach(function (trackerId) {
