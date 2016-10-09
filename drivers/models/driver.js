@@ -401,7 +401,7 @@ var self = {
     // Actions
     Homey.manager('flow').on('action.autoconditioning_control', function (callback, args) {
       TeslaDebugLog('Flow action autoconditioning control', args)
-      teslaApi.controlAutoConditioning(args.device.id, args.autoconditioningstate).then(function (state) {
+      teslaApi.controlAutoConditioning(args.device.id, args.autoconditioningstate === "ON").then(function (state) {
         callback(null, state)
       }).catch(callback)
     })
@@ -601,7 +601,7 @@ var self = {
       get: function (device_data, callback) {
         TeslaDebugLog('capabilities > location > get', device_data)
         if (!teslaApi) return callback('not_initiated')
-        teslaApi.getDriveState(devices_data.id)
+        teslaApi.getDriveState(device_data.id)
         .then(function (state) {
           var location = {
             lng: state.longitude, // trackers[device_data.id].location.lng
@@ -616,7 +616,7 @@ var self = {
       get: function (device_data, callback) {
         TeslaDebugLog('capabilities > moving > get', device_data)
         if (!teslaApi) return callback('not_initiated')
-        teslaApi.getDriveState(devices_data.id)
+        teslaApi.getDriveState(device_data.id)
         .then(function (state) {
           callback(null, state.speed != null)
         })

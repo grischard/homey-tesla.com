@@ -237,12 +237,12 @@
             "type": "dropdown",
             "values": [
               {
-                "id": false,
+                "id": "OFF",
                 "label": {
                   "en": "Off", "nl": "Uit"
                 }
               },{
-                "id": true,
+                "id": "ON",
                 "label": {
                   "en": "On", "nl": "Aan"
                 }
