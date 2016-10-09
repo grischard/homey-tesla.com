@@ -1,0 +1,316 @@
+{
+  "id":"com.tesla",
+  "version":"0.0.1",
+  "compatibility":">=0.9.3",
+  "name":{
+    "en":"Tesla",
+    "nl":"Tesla"
+  },
+  "description":{
+    "en":"Control your Tesla Model S and Model X",
+    "nl":"Bedien je Tesla Model S en Model X"
+  },
+  "author":{
+    "name":"Erik van Dongen",
+    "website":"http://github.com/irritanterik/"
+  },
+  "images":{
+    "large":"./assets/images/large.jpg",
+    "small":"./assets/images/small.jpg"
+  },
+  "category":"tools",
+  "permissions":[
+    "homey:manager:geolocation",
+    "homey:manager:speech-input",
+    "homey:manager:speech-output"
+  ],
+  "capabilities":{
+    "location": {
+      "type": "string",
+      "title": {
+        "en": "Location",
+        "nl": "Positie"
+      },
+      "units": {
+        "en": "Lat Lng"
+      },
+      "desc": {
+        "en": "Location of tracker"
+      },
+      "getable": true,
+      "setable": false
+    },
+    "moving": {
+      "type": "boolean",
+      "title": {
+        "en": "Moving",
+        "nl": "Onderweg"
+      },
+      "desc": {
+        "en": "Is tracker moving",
+        "nl": "Is tracker onderweg"
+      },
+      "getable": true,
+      "setable": false
+    }
+  },
+  "drivers":[
+    {
+      "id":"models",
+      "name":{
+        "en":"Model S",
+        "nl":"Model S"
+      },
+      "images":{
+        "large":"drivers/models/assets/images/large.jpg",
+        "small":"drivers/models/assets/images/small.jpg"
+      },
+      "class":"other",
+      "capabilities":["location", "moving"],
+      "settings":[
+        {
+          "type":"group",
+          "label":{
+            "en":"General settings",
+            "nl":"Instellingen"
+          },
+          "children":[
+            {
+              "id":"retriggerRestrictTime",
+              "type":"number",
+              "label":{
+                "en":"Minimum time between movement triggers (seconds)",
+                "nl":"Minimumtijd tussen beweging triggers (seconden)"
+              },
+              "value": 1,
+              "attr":{
+                "min": 0,
+                "max": 86400
+              }
+            },
+            {
+              "id":"retriggerRestrictDistance",
+              "type":"number",
+              "label":{
+                "en":"Minimum distance travelled between movement triggers (meters)",
+                "nl":"Minimaal afgelegde afstand tussen triggers (meter)"
+              },
+              "value": 1,
+              "attr":{
+                "min": 0,
+                "max": 40075000
+              }
+            },
+            {
+              "id":"stoppedMovingTimeout",
+              "type":"number",
+              "label":{
+                "en":"Minimum time between last new location and trigger 'stops moving' (seconds)",
+                "nl":"Minimumtijd tussen laatst ontvangen locatie en trigger 'einde beweging' (seconden)"
+              },
+              "value": 120,
+              "attr":{
+                "min": 30,
+                "max": 86400
+              }
+            }
+          ]
+        }
+      ],
+      "pair":[
+        {
+          "id":"start"
+        },
+        {
+          "id":"list_devices",
+          "template":"list_devices",
+          "navigation":{
+            "next":"add_vehicle"
+          }
+        },
+        {
+          "id":"add_vehicle",
+          "template":"add_devices"
+        }
+      ]
+    }
+  ],
+  "flow": {
+    "conditions": [
+      {
+        "id":"driver_temp_setting_value",
+        "title":{
+           "en":"℃ driver is !{{|not}} above",
+           "nl":"℃ bestuurder is !{{|niet}} boven"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "temperature",
+            "type": "number"
+          }
+        ]
+      },{
+        "id":"auto_conditioning_state",
+        "title":{
+           "en":"Airco is !{{on|off}}",
+           "nl":"Airco is !{{aan|uit}}"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },{
+        "id":"panoroof_state",
+        "title":{
+           "en":"Panoroof is !{{open|closed}}",
+           "nl":"Panoramadak is !{{open|dicht}}"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },{
+        "id":"vehicle_moving",
+        "title":{
+           "en":"!{{Driving|Not driving}}",
+           "nl":"Rijdt !{{|niet}}"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id":"honk",
+        "title":{
+           "en":"Honk horn",
+           "nl":"Claxonneer"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      }, {
+        "id":"flash_lights",
+        "title":{
+           "en":"Flash lights",
+           "nl":"Knipper koplampen"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },{
+        "id":"autoconditioning_control",
+        "title":{
+           "en":"Airco",
+           "nl":"Airco"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "autoconditioningstate",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": false,
+                "label": {
+                  "en": "Off", "nl": "Uit"
+                }
+              },{
+                "id": true,
+                "label": {
+                  "en": "On", "nl": "Aan"
+                }
+              }
+            ]
+          }
+        ]
+      },{
+        "id":"autoconditioning_temperature",
+        "title":{
+           "en":"Temperature setpoint",
+           "nl":"Temperatuur instellen"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "temp",
+            "type": "range",
+            "min": 17,
+            "max": 31,
+            "step": 0.5,
+            "label": "℃",
+            "labelDecimals": 1
+          }
+        ]
+      },{
+        "id":"panoroof_control",
+        "title":{
+           "en":"Panoroof setting",
+           "nl":"Panoramadak instelling"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "panoroofstate",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "open",
+                "label": {
+                  "en": "Open", "nl": "Openen"
+                }
+              },{
+                "id": "close",
+                "label": {
+                  "en": "Close", "nl": "Sluiten"
+                }
+              },{
+                "id": "comfort",
+                "label": {
+                  "en": "Comfort", "nl": "Comfort"
+                }
+              },{
+                "id": "vent",
+                "label": {
+                  "en": "Vent", "nl": "Ventileren"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
