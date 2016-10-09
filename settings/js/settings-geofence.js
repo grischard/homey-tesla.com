@@ -1,4 +1,4 @@
-/* global $, google */
+/* global $, Homey, __, google */
 
 var map
 var drawingManager

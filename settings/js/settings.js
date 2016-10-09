@@ -1,4 +1,4 @@
-/* global $ */
+/* global $, Homey */
 
 function showPanel (panel) {
   $('.panel').hide()

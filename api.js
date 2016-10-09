@@ -1,3 +1,4 @@
+/* global Homey */
 var Tesla = require('./lib/tesla.js')
 
 module.exports = [{
@@ -12,7 +13,7 @@ module.exports = [{
       user: args.query.user,
       password: args.query.password
     })
-    tesla.on('grant', function (newGrant) {
+    tesla.on('grant', (newGrant) => {
       Homey.manager('settings').set('teslaGrant', newGrant)
     })
     tesla.login().then(function () {
@@ -45,8 +46,6 @@ module.exports = [{
   requires_authorization: true,
   role: 'owner',
   fn: function (callback, args) {
-    Homey.manager('drivers').getDriver('models').getVehicles(function (response) {
-      callback(null, response)
-    })
+    callback(null, Homey.manager('drivers').getDriver('models').getVehicles())
   }
 }]

@@ -1,4 +1,4 @@
-/* global $ */
+/* global $, Homey, __ */
 
 function initAccount () {
   clearBusy()
