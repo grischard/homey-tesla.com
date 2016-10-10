@@ -310,6 +310,19 @@
             ]
           }
         ]
+      },{
+        "id":"wake_up",
+        "title":{
+           "en":"Wake up from sleep state",
+           "nl":"Wekken uit slaapstand"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
       }
     ]
   }

@@ -396,7 +396,7 @@ var self = {
         vehicles.forEach((vehicle) => {
           devices.push({
             name: vehicle.display_name,
-            data: {id: vehicle.id},
+            data: {id: vehicle.id, homeyDriverName: 'models'},
             icon: 'icon.svg'
           })
         })
