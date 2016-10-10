@@ -311,6 +311,19 @@
           }
         ]
       },{
+        "id":"reset_valet_pin",
+        "title":{
+           "en":"Reset valet PIN",
+           "nl":"Reset valet PIN"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },{
         "id":"set_valet_mode",
         "title":{
            "en":"Valet mode",
