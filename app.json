@@ -311,6 +311,57 @@
           }
         ]
       },{
+        "id":"set_valet_mode",
+        "title":{
+           "en":"Valet mode",
+           "nl":"Valet modus"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "valetstate",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "OFF",
+                "label": {
+                  "en": "Off", "nl": "Uit"
+                }
+              },{
+                "id": "ON",
+                "label": {
+                  "en": "On", "nl": "Aan"
+                }
+              }
+            ]
+          }
+        ]
+      },{
+        "id":"set_valet_mode_pin",
+        "title":{
+           "en":"Activate valet mode with PIN",
+           "nl":"Valet modus activeren met PIN"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "pin",
+            "type": "text",
+            "label": {
+              "en": "Off", "nl": "Uit"
+            },
+            "placeholder": {
+              "en": "0000"
+            }
+          }
+        ]
+      },{
         "id":"wake_up",
         "title":{
            "en":"Wake up from sleep state",
