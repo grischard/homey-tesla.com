@@ -433,7 +433,9 @@ var self = {
         trackers[device_data.id].settings[key] = newSettingsObj[key]
       })
       callback(null, true)
-    } catch (callback)
+    } catch (e) {
+      callback(e)
+    }
   },
   capabilities: {
     location: {
