@@ -368,6 +368,19 @@
           }
         ]
       },
+      { "id":"remote_start_drive",
+        "title":{
+           "en":"Remote start",
+           "nl":"Starten"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },
       { "id":"reset_valet_pin",
         "title":{
            "en":"Reset valet PIN",
