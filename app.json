@@ -195,8 +195,7 @@
       }
     ],
     "actions": [
-      {
-        "id":"honk",
+      { "id":"honk",
         "title":{
            "en":"Honk horn",
            "nl":"Claxonneer"
@@ -208,8 +207,8 @@
             "filter":"driver_id=models"
           }
         ]
-      }, {
-        "id":"flash_lights",
+      },
+      { "id":"flash_lights",
         "title":{
            "en":"Flash lights",
            "nl":"Knipper koplampen"
@@ -221,8 +220,8 @@
             "filter":"driver_id=models"
           }
         ]
-      },{
-        "id":"autoconditioning_control",
+      },
+      { "id":"autoconditioning_control",
         "title":{
            "en":"Airco",
            "nl":"Airco"
@@ -250,8 +249,8 @@
             ]
           }
         ]
-      },{
-        "id":"autoconditioning_temperature",
+      },
+      { "id":"autoconditioning_temperature",
         "title":{
            "en":"Temperature setpoint",
            "nl":"Temperatuur instellen"
@@ -271,8 +270,66 @@
             "labelDecimals": 1
           }
         ]
-      },{
-        "id":"panoroof_control",
+      },
+      { "id":"charge_control",
+        "title":{
+           "en":"Charging",
+           "nl":"Opladen"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "chargestate",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "OFF",
+                "label": {
+                  "en": "Off", "nl": "Uit"
+                }
+              },{
+                "id": "ON",
+                "label": {
+                  "en": "On", "nl": "Aan"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      { "id":"door_lock_control",
+        "title":{
+           "en":"Doors",
+           "nl":"Deuren"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "lock",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "LOCK",
+                "label": {
+                  "en": "Lock", "nl": "Vergrendelen"
+                }
+              },{
+                "id": "OPEN",
+                "label": {
+                  "en": "Unlock", "nl": "Openen"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      { "id":"panoroof_control",
         "title":{
            "en":"Panoroof setting",
            "nl":"Panoramadak instelling"
@@ -310,8 +367,8 @@
             ]
           }
         ]
-      },{
-        "id":"reset_valet_pin",
+      },
+      { "id":"reset_valet_pin",
         "title":{
            "en":"Reset valet PIN",
            "nl":"Reset valet PIN"
@@ -323,8 +380,8 @@
             "filter":"driver_id=models"
           }
         ]
-      },{
-        "id":"set_charge_mode",
+      },
+      { "id":"set_charge_mode",
         "title":{
            "en":"Set charge limit mode",
            "nl":"Instellen oplaad modus"
@@ -352,8 +409,8 @@
             ]
           }
         ]
-      },{
-        "id":"set_charge_limit",
+      },
+      { "id":"set_charge_limit",
         "title":{
            "en":"Set charge limit %",
            "nl":"Instellen oplaad limiet %"
@@ -373,8 +430,8 @@
             "labelDecimals": 0
           }
         ]
-      },{
-        "id":"charge_port_open",
+      },
+      { "id":"open_charge_port",
         "title":{
            "en":"Open charge port",
            "nl":"Openen oplaadpunt"
@@ -386,8 +443,8 @@
             "filter":"driver_id=models"
           }
         ]
-      },{
-        "id":"set_valet_mode",
+      },
+      { "id":"set_valet_mode",
         "title":{
            "en":"Valet mode",
            "nl":"Valet modus"
@@ -415,8 +472,8 @@
             ]
           }
         ]
-      },{
-        "id":"set_valet_mode_pin",
+      },
+      { "id":"set_valet_mode_pin",
         "title":{
            "en":"Activate valet mode with PIN",
            "nl":"Valet modus activeren met PIN"
@@ -437,8 +494,8 @@
             }
           }
         ]
-      },{
-        "id":"wake_up",
+      },
+      { "id":"wake_up",
         "title":{
            "en":"Wake up from sleep state",
            "nl":"Wekken uit slaapstand"
