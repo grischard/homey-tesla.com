@@ -302,6 +302,7 @@ function initiateTracking () {
 var self = {
   init: function (devices_data, callback) {
     // initial load of trackers object
+    // TODO: use promisses to resolve asynch issues
     devices_data.forEach((device_data) => {
       Homey.manager('drivers').getDriver('models').getName(device_data, (err, name) => {
         console.log('device name: ', name, device_data)

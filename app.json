@@ -137,8 +137,20 @@
   ],
   "flow": {
     "conditions": [
-      {
-        "id":"driver_temp_setting_value",
+      { "id":"autoConditioningState",
+        "title":{
+           "en":"Airco is !{{on|off}}",
+           "nl":"Airco is !{{aan|uit}}"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },
+      { "id":"driverTempSettingValue",
         "title":{
            "en":"℃ driver is !{{|not}} above",
            "nl":"℃ bestuurder is !{{|niet}} boven"
@@ -153,21 +165,30 @@
             "type": "number"
           }
         ]
-      },{
-        "id":"auto_conditioning_state",
+      },
+      { "id":"magicApiConditions",
         "title":{
-           "en":"Airco is !{{on|off}}",
-           "nl":"Airco is !{{aan|uit}}"
+           "en":"Api condition !{{|inversed}}",
+           "nl":"Api conditie !{{|omgekeerd}}"
         },
         "args": [
           {
             "name": "device",
             "type": "device",
             "filter":"driver_id=models"
+          },{
+            "name": "apiValue",
+            "type": "autocomplete"
+          },{
+            "name": "conditionType",
+            "type": "autocomplete"
+          },{
+            "name": "conditionValue",
+            "type": "text"
           }
         ]
-      },{
-        "id":"panoroof_state",
+      },
+      { "id":"panoroofState",
         "title":{
            "en":"Panoroof is !{{open|closed}}",
            "nl":"Panoramadak is !{{open|dicht}}"
@@ -179,8 +200,8 @@
             "filter":"driver_id=models"
           }
         ]
-      },{
-        "id":"vehicle_moving",
+      },
+      { "id":"vehicleMoving",
         "title":{
            "en":"!{{Driving|Not driving}}",
            "nl":"Rijdt !{{|niet}}"
@@ -195,33 +216,7 @@
       }
     ],
     "actions": [
-      { "id":"honk",
-        "title":{
-           "en":"Honk horn",
-           "nl":"Claxonneer"
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter":"driver_id=models"
-          }
-        ]
-      },
-      { "id":"flash_lights",
-        "title":{
-           "en":"Flash lights",
-           "nl":"Knipper koplampen"
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter":"driver_id=models"
-          }
-        ]
-      },
-      { "id":"autoconditioning_control",
+      { "id":"autoconditioningControl",
         "title":{
            "en":"Airco",
            "nl":"Airco"
@@ -250,7 +245,7 @@
           }
         ]
       },
-      { "id":"autoconditioning_temperature",
+      { "id":"autoconditioningTemperature",
         "title":{
            "en":"Temperature setpoint",
            "nl":"Temperatuur instellen"
@@ -271,7 +266,7 @@
           }
         ]
       },
-      { "id":"charge_control",
+      { "id":"chargeControl",
         "title":{
            "en":"Charging",
            "nl":"Opladen"
@@ -300,7 +295,7 @@
           }
         ]
       },
-      { "id":"door_lock_control",
+      { "id":"doorLockControl",
         "title":{
            "en":"Doors",
            "nl":"Deuren"
@@ -329,7 +324,46 @@
           }
         ]
       },
-      { "id":"panoroof_control",
+      { "id":"flashLights",
+        "title":{
+           "en":"Flash lights",
+           "nl":"Knipper koplampen"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },
+      { "id":"honk",
+        "title":{
+           "en":"Honk horn",
+           "nl":"Claxonneer"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },
+      { "id":"openChargePort",
+        "title":{
+           "en":"Open charge port",
+           "nl":"Openen oplaadpunt"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },
+      { "id":"panoroofControl",
         "title":{
            "en":"Panoroof setting",
            "nl":"Panoramadak instelling"
@@ -368,7 +402,7 @@
           }
         ]
       },
-      { "id":"remote_start_drive",
+      { "id":"remoteStartDrive",
         "title":{
            "en":"Remote start",
            "nl":"Starten"
@@ -381,7 +415,7 @@
           }
         ]
       },
-      { "id":"reset_valet_pin",
+      { "id":"resetValetPin",
         "title":{
            "en":"Reset valet PIN",
            "nl":"Reset valet PIN"
@@ -394,7 +428,7 @@
           }
         ]
       },
-      { "id":"set_charge_mode",
+      { "id":"setChargeMode",
         "title":{
            "en":"Set charge limit mode",
            "nl":"Instellen oplaad modus"
@@ -423,7 +457,7 @@
           }
         ]
       },
-      { "id":"set_charge_limit",
+      { "id":"setChargeLimit",
         "title":{
            "en":"Set charge limit %",
            "nl":"Instellen oplaad limiet %"
@@ -444,20 +478,7 @@
           }
         ]
       },
-      { "id":"open_charge_port",
-        "title":{
-           "en":"Open charge port",
-           "nl":"Openen oplaadpunt"
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter":"driver_id=models"
-          }
-        ]
-      },
-      { "id":"set_valet_mode",
+      { "id":"setValetMode",
         "title":{
            "en":"Valet mode",
            "nl":"Valet modus"
@@ -486,7 +507,7 @@
           }
         ]
       },
-      { "id":"set_valet_mode_pin",
+      { "id":"setValetPin",
         "title":{
            "en":"Activate valet mode with PIN",
            "nl":"Valet modus activeren met PIN"
@@ -508,7 +529,7 @@
           }
         ]
       },
-      { "id":"wake_up",
+      { "id":"wakeUp",
         "title":{
            "en":"Wake up from sleep state",
            "nl":"Wekken uit slaapstand"
