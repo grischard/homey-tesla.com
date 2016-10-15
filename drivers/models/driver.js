@@ -466,7 +466,12 @@ var self = {
     }
   },
   getVehicles: () => { return trackers },
-  getApi: () => { return teslaApi }
+  getApi: () => {
+    return new Promise((resolve, reject) => {
+      if (!teslaApi) return reject('no_settings')
+      resolve(teslaApi)
+    })
+  }
 }
 
 module.exports = self
