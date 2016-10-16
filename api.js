@@ -46,6 +46,13 @@ module.exports = [{
   requires_authorization: true,
   role: 'owner',
   fn: function (callback, args) {
-    callback(null, Homey.manager('drivers').getDriver('models').getVehicles())
+    var vehicles = []
+    Homey.manifest.drivers.map((driver) => driver.id).forEach((driver) => {
+      var drivervehicles = Homey.manager('drivers').getDriver(driver).getVehicles()
+      Object.keys(drivervehicles).forEach((vehicle) => {
+        vehicles.push(drivervehicles[vehicle])
+      })
+    })
+    callback(null, vehicles)
   }
 }]
