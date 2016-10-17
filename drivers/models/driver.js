@@ -7,12 +7,14 @@ var FlowActions = require('../../lib/flow/actions.js')
 var Util = require('../../lib/util.js')
 var Inside = require('point-in-polygon')
 var teslaApi = null
+
 var retryTrackingTimeoutId = null
-var tracking = null
+// var tracking = null
 var trackers = {}
 var trackerTimeoutObjects = {}
-var geofences = {}
+var geofences = {}  // >>> TODO put generic geofences functions in lib
 
+// >>> TODO put generic geofences functions in lib
 function checkGeofences (notrigger) {
   if (!trackers) return
   Object.keys(trackers).forEach((trackerId) => {
@@ -20,6 +22,7 @@ function checkGeofences (notrigger) {
   })
 }
 
+// >>> TODO put generic geofences functions in lib
 function checkGeofencesForVehicle (trackerId, notrigger) {
   if (!geofences) return
   Object.keys(geofences).forEach((geofenceId) => {
@@ -128,20 +131,13 @@ function updateVehicle (trackerId, callback) {
   if (!settings) return callback('no_settings')
   if (!trackerId) return callback('no_device')
 
-  var singleTrack = new Tesla({
-    user: settings.user,
-    password: settings.password,
-    grant: grant
+  teslaApi.getLocation(trackerId).then((location) => {
+    trackers[trackerId].location = location
+    callback(null, trackerId)
+  }).catch((error) => {
+    Util.debugLog('event: error', error)
+    return callback(error)
   })
-  singleTrack.getVehicleAddress(trackerId)
-    .then((address) => {
-      trackers[trackerId].location = address
-      callback(null, trackerId)
-    })
-    .catch((error) => {
-      Util.debugLog('event: error', error)
-      return callback(error)
-    })
 }
 
 function initiateTracking () {
@@ -153,13 +149,13 @@ function initiateTracking () {
   teslaApi = null
   geofences = Homey.manager('settings').get('geofences')
   var settings = Homey.manager('settings').get('teslaAccount')
-  var grant = Homey.manager('settings').get('teslaGrant')
   if (!settings) return Util.debugLog('  no settings!')
 
   teslaApi = new Tesla({
     user: settings.user,
     password: settings.password,
-    grant: grant,
+    grant: Homey.manager('settings').get('teslaGrant'),
+    language: Homey.manager('i18n').getLanguage(),
     intervalMS: 10000 // TODO: read from app setting
   })
 
@@ -169,16 +165,13 @@ function initiateTracking () {
 
   // >> temp code
   Object.keys(trackers).forEach((trackerId) => {
-    teslaApi.getDriveState(trackerId).then((state) => {
-      trackers[trackerId].location = {
-        place: 'straat',
-        city: 'plaats',
-        lat: state.latitude,
-        lng: state.longitude
-      }
+    teslaApi.getLocation(trackerId).then((location) => {
+      trackers[trackerId].location = location
     })
   })
 
+  return Util.debugLog('  polling not yet supported by this app')
+  // >> TODO revisit dead code below
   if (!settings.polling) return Util.debugLog('  polling disabled in settings')
 
   Object.keys(trackers).forEach((trackerId) => {
@@ -370,7 +363,7 @@ var self = {
 
     // delay initiation becouse getting settings per device take time
     setTimeout(initiateTracking, 3000)
-    callback()
+    setTimeout(callback, 6000)
   },
   renamed: function (device, name, callback) {
     Util.debugLog('rename vehicle', [device, name])
@@ -397,7 +390,7 @@ var self = {
         vehicles.forEach((vehicle) => {
           devices.push({
             name: vehicle.display_name,
-            data: {id: vehicle.id, homeyDriverName: 'models'},
+            data: {id: vehicle.id_s, homeyDriverName: 'models'},
             icon: 'icon.svg'
           })
         })
