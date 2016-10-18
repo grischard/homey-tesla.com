@@ -55,4 +55,14 @@ module.exports = [{
     })
     callback(null, vehicles)
   }
+}, {
+  description: 'Test Tesla API',
+  method: 'GET',
+  path: '/testApi',
+  requires_authorization: true,
+  role: 'owner',
+  fn: function (callback, args) {
+    callback(null, true)
+    Homey.app.testApi()
+  }
 }]

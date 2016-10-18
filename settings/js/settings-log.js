@@ -14,6 +14,17 @@ function clearTeslaLog () {
   })
 }
 
+function copyTeslaLog () {
+  Homey.get('teslaLog', function (error, value) {
+    if (error) return Homey.alert(error)
+    window.prompt('Copy this', JSON.stringify(value))
+  })
+}
+
+function testTeslaApi () {
+  Homey.api('GET', '/testApi')
+}
+
 function firstLoadLog () {
   $('tr.logentry').remove()
   Homey.get('teslaLog', function (error, value) {
@@ -28,11 +39,11 @@ function firstLoadLog () {
 
 function addLogEntry (datetime, message, data) {
   var html = '<tr class="logentry"><td class="datetime">' +
-  datetime + '</td><td colspan=2 class="entry">' + message
+  datetime + '</td><td class="entry"><strong>' + message + '</strong>'
   if (data == null) {
     html += '</td></tr>'
   } else {
-    html += '<br>' + JSON.stringify(data) + '</td></tr>'
+    html += '<br><code>' + JSON.stringify(data, ' ') + '</code></td></tr>'
   }
   $('table#logs tr:first').after(html)
 }

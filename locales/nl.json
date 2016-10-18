@@ -39,10 +39,13 @@
 			"intro": "Nog niet beschikbaar"
 		},
 		"debug": {
-			"title": "Logging",
+			"title": "Log en analyse",
+      "tools": "Hulpmiddelen",
 			"thDateTime": "Datum en tijd",
 			"thMessage": "Bericht",
-      "buttonClear": "Log verwijderen"
+      "buttonTest": "Test API",
+      "buttonClear": "Log verwijderen",
+      "buttonCopy": "Log kopiëren"
 		}
 	},
 	"pair": {

@@ -51,10 +51,13 @@
       "optionRoutes": "Routes"
   	},
 		"debug": {
-			"title": "Logging",
+			"title": "Log and debug",
+      "tools": "Tools",
 			"thDateTime": "Date and time",
 			"thMessage": "Message",
-      "buttonClear": "Clear logging"
+      "buttonTest": "Test API",
+      "buttonClear": "Clear log",
+      "buttonCopy": "Copy log"
 		}
 	},
 	"pair": {

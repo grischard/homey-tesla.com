@@ -127,7 +127,6 @@ function stopMoving (trackerId) {
 function updateVehicle (trackerId, callback) {
   Util.debugLog('######### TESLA TRACKING ## updateVehicle #########################')
   var settings = Homey.manager('settings').get('teslaAccount')
-  var grant = Homey.manager('settings').get('teslaGrant')
   if (!settings) return callback('no_settings')
   if (!trackerId) return callback('no_device')
 
@@ -144,7 +143,7 @@ function initiateTracking () {
   if (retryTrackingTimeoutId) clearTimeout(retryTrackingTimeoutId)
   retryTrackingTimeoutId = null
 
-  Util.debugLog('######### TESLA TRACKING ## initiateTracking #########################')
+  Util.debugLog('######### TESLA TRACKING ## initiateTracking #########################', {Homey: Homey.version, App: Homey.manifest.version})
   // if (teslaApi) teslaApi.stopTracking()
   teslaApi = null
   geofences = Homey.manager('settings').get('geofences')
@@ -297,8 +296,8 @@ var self = {
     // initial load of trackers object
     // TODO: use promisses to resolve asynch issues
     devices_data.forEach((device_data) => {
-      Homey.manager('drivers').getDriver('models').getName(device_data, (err, name) => {
-        console.log('device name: ', name, device_data)
+      Homey.manager('drivers').getDriver(device_data.homeyDriverName).getName(device_data, (err, name) => {
+        Util.debugLog('Initiate device', {name: name, data: device_data})
         if (err) return
         trackers[device_data.id] = {
           trackerId: device_data.id,
@@ -463,6 +462,58 @@ var self = {
     return new Promise((resolve, reject) => {
       if (!teslaApi) return reject('no_settings')
       resolve(teslaApi)
+    })
+  },
+  testApi: () => {
+    var testVehicleId = null
+    var drivername = 'models'
+    if (!teslaApi) return Util.debugLog('api not ready, are settings saved?')
+    teslaApi.validateGrant()
+    .then(function () {
+      Util.debugLog(drivername + ' validateGrant ok')
+      return teslaApi.getVehicles()
+    }).catch(function (error) {
+      return Util.debugLog(drivername + ' validateGrant failed', error)
+    }).then(function (vehicles) {
+      Util.debugLog(drivername + ' getVehicles ok', vehicles)
+      testVehicleId = vehicles[0].id_s
+      return teslaApi.getVehicleState(testVehicleId)
+    }).catch(function (error) {
+      return Util.debugLog(drivername + ' getVehicles failed', error)
+    }).then(function (state) {
+      Util.debugLog(drivername + ' getVehicleState ok', state)
+      return teslaApi.getDriveState(testVehicleId)
+    }).catch(function (error) {
+      Util.debugLog(drivername + ' getVehicleState failed', error)
+      return teslaApi.getDriveState(testVehicleId)
+    }).then(function (state) {
+      Util.debugLog(drivername + ' getDriveState ok', state)
+      return teslaApi.getClimateState(testVehicleId)
+    }).catch(function (error) {
+      Util.debugLog(drivername + ' getDriveState failed', error)
+      return teslaApi.getClimateState(testVehicleId)
+    }).then(function (state) {
+      Util.debugLog(drivername + ' getClimateState ok', state)
+      return teslaApi.getGuiSettings(testVehicleId)
+    }).catch(function (error) {
+      Util.debugLog(drivername + ' getClimateState failed', error)
+      return teslaApi.getGuiSettings(testVehicleId)
+    }).then(function (state) {
+      Util.debugLog(drivername + ' getGuiSettings ok', state)
+      return teslaApi.getChargeState(testVehicleId)
+    }).catch(function (error) {
+      Util.debugLog(drivername + ' getGuiSettings failed', error)
+      return teslaApi.getChargeState(testVehicleId)
+    }).then(function (state) {
+      Util.debugLog(drivername + ' getChargeState ok', state)
+      return teslaApi.getMobileAccess(testVehicleId)
+    }).catch(function (error) {
+      Util.debugLog(drivername + ' getChargeState failed', error)
+      return teslaApi.getMobileAccess(testVehicleId)
+    }).then(function (state) {
+      Util.debugLog(drivername + ' getMobileAccess ok', state)
+    }).catch(function (error) {
+      Util.debugLog(drivername + ' getMobileAccess failed', error)
     })
   }
 }
