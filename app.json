@@ -152,8 +152,8 @@
       },
       { "id":"driverTempSettingValue",
         "title":{
-           "en":"℃ driver is !{{|not}} above",
-           "nl":"℃ bestuurder is !{{|niet}} boven"
+           "en":"Airco setpoint is !{{|not}} above (℃)",
+           "nl":"Airco instelling is !{{|niet}} boven (℃)"
         },
         "args": [
           {
