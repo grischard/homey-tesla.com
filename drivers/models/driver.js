@@ -4,6 +4,7 @@
 var Tesla = require('../../lib/tesla.js')
 var FlowConditions = require('../../lib/flow/conditions.js')
 var FlowActions = require('../../lib/flow/actions.js')
+var SpeechHandlers = require('../../lib/speech/speech.js')
 var Util = require('../../lib/util.js')
 var Inside = require('point-in-polygon')
 var teslaApi = null
@@ -107,7 +108,7 @@ function stopMoving (trackerId) {
   Homey.manager('api').realtime('teslaLocation', trackers[trackerId])
 
   // handle flows
-  var tracker_tokens = {
+  var tokens = {
     start_location: Util.createAddressSpeech(route.start.place, route.start.city),
     stop_location: Util.createAddressSpeech(route.end.place, route.end.city),
     distance: Math.ceil(route.distance) || 0
@@ -115,7 +116,7 @@ function stopMoving (trackerId) {
 
   Homey.manager('flow').triggerDevice(
     'vehicle_stopt_moving',
-    tracker_tokens,
+    tokens,
     null,
     {id: trackerId},
     function (err, result) {
@@ -292,28 +293,28 @@ function initiateTracking () {
 } // function initiateTracking
 
 var self = {
-  init: function (devices_data, callback) {
-    // initial load of trackers object
+  init: function (devices, callback) {
     // TODO: use promisses to resolve asynch issues
-    devices_data.forEach((device_data) => {
-      Homey.manager('drivers').getDriver(device_data.homeyDriverName).getName(device_data, (err, name) => {
-        Util.debugLog('Initiate device', {name: name, data: device_data})
-        if (err) return
-        trackers[device_data.id] = {
-          trackerId: device_data.id,
+
+    devices.forEach(device => {
+      Homey.manager('drivers').getDriver(device.homeyDriverName).getName(device, (error, name) => {
+        Util.debugLog('Initiate device', {name: name, data: device})
+        if (error) return
+        trackers[device.id] = {
+          trackerId: device.id,
           name: name,
           location: {},
           geofences: []
         }
-        trackerTimeoutObjects[device_data.id] = null
-        module.exports.getSettings(device_data, (err, settings) => {
-          if (err) Util.debugLog('Error on loading device settings', {device_data: device_data, error: err})
+        trackerTimeoutObjects[device.id] = null
+        module.exports.getSettings(device, (error, settings) => {
+          if (error) Util.debugLog('Error on loading device settings', {device: device, error: error})
           var trackersettings = {
             retriggerRestrictTime: settings.retriggerRestrictTime || 1,
             retriggerRestrictDistance: settings.retriggerRestrictDistance || 1,
             stoppedMovingTimeout: settings.stoppedMovingTimeout || 120
           }
-          trackers[device_data.id].settings = trackersettings
+          trackers[device.id].settings = trackersettings
         })
       })
     })
@@ -321,29 +322,8 @@ var self = {
     // Init flows
     FlowConditions.init()
     FlowActions.init()
-
-    Homey.manager('speech-input').on('speech', (speech, callback) => {
-      var settings = Homey.manager('settings').get('teslaAccount')
-      if (!settings.speech) { return callback(true, null) }
-
-      function ready (err, trackerId) {
-        if (err) return
-        speech.say(Util.createAddressSpeech(trackers[trackerId].location.place, trackers[trackerId].location.city, trackers[trackerId].name))
-      }
-
-      if (speech.devices) {
-        speech.devices.forEach((device) => {
-          if (tracking == null) {
-            updateVehicle(device.id, ready)
-          } else {
-            ready(null, device.id)
-          }
-        })
-        callback(null, true)
-      } else {
-        callback(true, null)
-      }
-    })
+    // Init speech
+    SpeechHandlers.init()
 
     Homey.manager('settings').on('set', (setting) => {
       switch (setting) {
@@ -360,7 +340,7 @@ var self = {
       }
     })
 
-    // delay initiation becouse getting settings per device take time
+    // delay initiation because getting settings per device take time
     setTimeout(initiateTracking, 3000)
     setTimeout(callback, 6000)
   },
@@ -414,8 +394,8 @@ var self = {
       callback(null)
     })
   },
-  settings: function (device_data, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
-    Util.debugLog('settings changed', {device_data: device_data, newSettingsObj: newSettingsObj, changedKeysArr: changedKeysArr})
+  settings: function (device, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
+    Util.debugLog('settings changed', {device: device, newSettingsObj: newSettingsObj, changedKeysArr: changedKeysArr})
 
     // TODO: translate errors
     if (newSettingsObj.retriggerRestrictTime < 0) { return callback('Negative value') }
@@ -423,7 +403,7 @@ var self = {
     if (newSettingsObj.stoppedMovingTimeout < 30) { return callback('Timout cannot be smaller than 30 seconds') }
     try {
       changedKeysArr.forEach((key) => {
-        trackers[device_data.id].settings[key] = newSettingsObj[key]
+        trackers[device.id].settings[key] = newSettingsObj[key]
       })
       callback(null, true)
     } catch (e) {
@@ -432,14 +412,14 @@ var self = {
   },
   capabilities: {
     location: {
-      get: function (device_data, callback) {
-        Util.debugLog('capabilities > location > get', device_data)
+      get: function (device, callback) {
+        Util.debugLog('capabilities > location > get', device)
         if (!teslaApi) return callback('not_initiated')
-        teslaApi.getDriveState(device_data.id)
-        .then((state) => {
+        teslaApi.getDriveState(device.id)
+        .then(state => {
           var location = {
-            lng: state.longitude, // trackers[device_data.id].location.lng
-            lat: state.latitude // trackers[device_data.id].location.lat
+            lng: state.longitude,
+            lat: state.latitude
           }
           callback(null, JSON.stringify(location))
         })
@@ -447,13 +427,12 @@ var self = {
       }
     },
     moving: {
-      get: function (device_data, callback) {
-        Util.debugLog('capabilities > moving > get', device_data)
+      get: function (device, callback) {
+        Util.debugLog('capabilities > moving > get', device)
         if (!teslaApi) return callback('not_initiated')
-        teslaApi.getDriveState(device_data.id)
-        .then((state) => { callback(null, state.speed != null) })
+        teslaApi.getDriveState(device.id)
+        .then(state => { callback(null, state.speed != null) })
         .catch(callback)
-        // callback(null, trackers[device_data.id].moving)
       }
     }
   },

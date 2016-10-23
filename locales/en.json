@@ -1,6 +1,6 @@
 { "defaultGeofenceName": "Home",
 	"speech": {
-    "theLocationOfVehicles": "The location of vehicles ",
+    "theLocationOf": "The location of ",
     "is": " is ",
 		"placeCityConjunction": ", ",
 		"positionUnknown": "Unknown"

@@ -1,6 +1,6 @@
 { "defaultGeofenceName": "Thuis",
 	"speech": {
-    "theLocationOfVehicle": "De locatie van ",
+    "theLocationOf": "De locatie van ",
     "is": " is ",
 		"placeCityConjunction": " in ",
 		"positionUnknown": "Onbekend"

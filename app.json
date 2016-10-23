@@ -1,14 +1,14 @@
 {
   "id":"com.tesla",
-  "version":"0.0.1",
-  "compatibility":">=0.9.3",
+  "version":"0.1.0",
+  "compatibility":">=0.10.5",
   "name":{
     "en":"Tesla",
     "nl":"Tesla"
   },
   "description":{
-    "en":"Control your Tesla Model S and Model X",
-    "nl":"Bedien je Tesla Model S en Model X"
+    "en":"Control your Tesla Model S",
+    "nl":"Bedien je Tesla Model S"
   },
   "author":{
     "name":"Erik van Dongen",
@@ -428,6 +428,19 @@
           }
         ]
       },
+      { "id":"sayLocation",
+        "title":{
+           "en":"Say location",
+           "nl":"Vertel locatie"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ]
+      },
       { "id":"setChargeMode",
         "title":{
            "en":"Set charge limit mode",
@@ -543,5 +556,39 @@
         ]
       }
     ]
-  }
+  },
+  "speech": [
+    {
+      "id": "tesla",
+      "importance": 1,
+      "triggers": {
+        "en": ["tesla"],
+        "nl": ["tesla"]
+      }
+    },{
+      "id": "where_is",
+      "importance": 0.4,
+      "triggers": {
+        "en": ["where is", "what is"],
+        "nl": ["waar is", "wat is"]
+      }
+    },{
+      "id": "address",
+      "importance": 0.4,
+      "triggers": {
+        "en": ["address", "location", "position"],
+        "nl": ["adres", "locatie", "positie"]
+      }
+    }
+  ],
+  "speechExamples":[
+    {
+      "en": "GPS [car name]",
+      "nl": "GPS [naam auto]"
+    },
+    {
+      "en": "What is address/location/position [car name]",
+      "nl": "Wat is adres/locatie/positie [naam auto]"
+    }
+  ]
 }

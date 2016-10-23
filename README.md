@@ -3,6 +3,9 @@ Homey App: Control your Tesla Model S
 
 # Alpha version under construction
 
+## Speech
+Ask the actual location of your tesla with 'Tesla [car name]' or 'What is location of [car name]'
+
 ## Trigger cards
 under construction
 
@@ -24,6 +27,7 @@ under construction
 - Panoroof control
 - Remote start (must start driving within 2 minutes)
 - Reset valet PIN
+- Say location of car
 - Set charge limit mode
 - Set charge limit percentage
 - Valet mode on/off

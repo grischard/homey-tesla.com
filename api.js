@@ -13,7 +13,7 @@ module.exports = [{
       user: args.query.user,
       password: args.query.password
     })
-    tesla.on('grant', (newGrant) => {
+    tesla.on('grant', newGrant => {
       Homey.manager('settings').set('teslaGrant', newGrant)
     })
     tesla.login().then(function () {
@@ -29,15 +29,6 @@ module.exports = [{
   role: 'owner',
   fn: function (callback, args) {
     Homey.manager('geolocation').getLocation(callback)
-  }
-}, {
-  description: 'Get latest api grant',
-  method: 'GET',
-  path: '/grant',
-  requires_authorization: true,
-  role: 'owner',
-  fn: function (callback, args) {
-    callback(null, Homey.manager('settings').get('teslaGrant'))
   }
 }, {
   description: 'Get all vehicles',
