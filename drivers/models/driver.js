@@ -7,8 +7,8 @@ var FlowActions = require('../../lib/flow/actions.js')
 var SpeechHandlers = require('../../lib/speech/speech.js')
 var Util = require('../../lib/util.js')
 var Inside = require('point-in-polygon')
-var teslaApi = null
 
+var teslaApi = null
 var retryTrackingTimeoutId = null
 // var tracking = null
 var trackers = {}
@@ -125,21 +125,6 @@ function stopMoving (trackerId) {
   )
 }
 
-function updateVehicle (trackerId, callback) {
-  Util.debugLog('######### TESLA TRACKING ## updateVehicle #########################')
-  var settings = Homey.manager('settings').get('teslaAccount')
-  if (!settings) return callback('no_settings')
-  if (!trackerId) return callback('no_device')
-
-  teslaApi.getLocation(trackerId).then((location) => {
-    trackers[trackerId].location = location
-    callback(null, trackerId)
-  }).catch((error) => {
-    Util.debugLog('event: error', error)
-    return callback(error)
-  })
-}
-
 function initiateTracking () {
   if (retryTrackingTimeoutId) clearTimeout(retryTrackingTimeoutId)
   retryTrackingTimeoutId = null
@@ -160,21 +145,15 @@ function initiateTracking () {
   })
 
   if (!Object.keys(trackers).length) return Util.debugLog('  no devices to track!')
-  teslaApi.on('error', (error) => { Util.debugLog('event: error', error) })
-  teslaApi.on('grant', (newgrant) => { Homey.manager('settings').set('teslaGrant', newgrant) })
-
-  // >> temp code
-  Object.keys(trackers).forEach((trackerId) => {
-    teslaApi.getLocation(trackerId).then((location) => {
-      trackers[trackerId].location = location
-    })
-  })
+  teslaApi.on('error', error => { Util.debugLog('event: error', error) })
+  teslaApi.on('grant', newgrant => { Homey.manager('settings').set('teslaGrant', newgrant) })
 
   return Util.debugLog('  polling not yet supported by this app')
-  // >> TODO revisit dead code below
-  if (!settings.polling) return Util.debugLog('  polling disabled in settings')
 
   Object.keys(trackers).forEach((trackerId) => {
+    teslaApi.getLocation(trackerId).then(location => {
+      trackers[trackerId].location = location
+    })
     trackers[trackerId].timeLastTrigger = 0
     // clear route tracking if tracker is not moving or never initiated before
     if (trackers[trackerId].moving !== true) {
@@ -186,6 +165,9 @@ function initiateTracking () {
       }
     }
   })
+
+  if (!settings.polling) return Util.debugLog('  polling disabled in settings')
+  // >> TODO revisit dead code below
 
   teslaApi.on('tracking_terminated', (reason) => {
     if (tracking) {
@@ -360,13 +342,13 @@ var self = {
       if (!settings) return callback('errorNoSettings')
       teslaApi.validateGrant()
       .then(callback(null))
-      .catch((reason) => { callback('errorInvalidSettings') })
+      .catch(reason => { callback('errorInvalidSettings') })
     })
     socket.on('list_devices', (data, callback) => {
       var devices = []
-      teslaApi.getVehicles().then((vehicles) => {
+      teslaApi.getVehicles().then(vehicles => {
         if (!vehicles) return callback('errorNoVehiclesFound')
-        vehicles.forEach((vehicle) => {
+        vehicles.forEach(vehicle => {
           devices.push({
             name: vehicle.display_name,
             data: {id: vehicle.id_s, homeyDriverName: 'models'},
@@ -402,9 +384,7 @@ var self = {
     if (newSettingsObj.retriggerRestrictDistance < 0) { return callback('Negative value') }
     if (newSettingsObj.stoppedMovingTimeout < 30) { return callback('Timout cannot be smaller than 30 seconds') }
     try {
-      changedKeysArr.forEach((key) => {
-        trackers[device.id].settings[key] = newSettingsObj[key]
-      })
+      changedKeysArr.forEach(key => { trackers[device.id].settings[key] = newSettingsObj[key] })
       callback(null, true)
     } catch (e) {
       callback(e)
