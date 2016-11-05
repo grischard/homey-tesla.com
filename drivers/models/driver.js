@@ -148,8 +148,6 @@ function initiateTracking () {
   teslaApi.on('error', error => { Util.debugLog('event: error', error) })
   teslaApi.on('grant', newgrant => { Homey.manager('settings').set('teslaGrant', newgrant) })
 
-  return Util.debugLog('  polling not yet supported by this app')
-
   Object.keys(trackers).forEach((trackerId) => {
     teslaApi.getLocation(trackerId).then(location => {
       trackers[trackerId].location = location
@@ -166,6 +164,7 @@ function initiateTracking () {
     }
   })
 
+  return Util.debugLog('  polling not yet supported by this app')
   if (!settings.polling) return Util.debugLog('  polling disabled in settings')
   // >> TODO revisit dead code below
 
