@@ -2,110 +2,73 @@
 'use strict'
 
 var Tesla = require('../../lib/tesla.js')
-var FlowConditions = require('../../lib/flow/conditions.js')
-var FlowActions = require('../../lib/flow/actions.js')
-var SpeechHandlers = require('../../lib/speech/speech.js')
 var Util = require('../../lib/util.js')
-var Inside = require('point-in-polygon')
+var Geo = require('../../lib/geofences.js')
+
+const retryTrackingTimeoutMs = 5 * 60 * 1000
 
 var teslaApi = null
 var retryTrackingTimeoutId = null
-// var tracking = null
-var trackers = {}
-var trackerTimeoutObjects = {}
-var geofences = {}  // >>> TODO put generic geofences functions in lib
+var trackerIntervalObjects = {}
+var geofences = {}
+var vehicles = {}
 
-// >>> TODO put generic geofences functions in lib
 function checkGeofences (notrigger) {
-  if (!trackers) return
-  Object.keys(trackers).forEach((trackerId) => {
-    checkGeofencesForVehicle(trackerId, notrigger)
+  if (!vehicles) return
+  Object.keys(vehicles).forEach((vehicleId) => {
+    checkGeofencesForVehicle(vehicleId, notrigger)
   })
 }
 
-// >>> TODO put generic geofences functions in lib
-function checkGeofencesForVehicle (trackerId, notrigger) {
+function checkGeofencesForVehicle (vehicleId, notrigger) {
   if (!geofences) return
-  Object.keys(geofences).forEach((geofenceId) => {
-    var trackerInGeofence = false
-    var trackerWasInGeofence = trackers[trackerId].geofences.indexOf(geofenceId) !== -1
-    if (geofences[geofenceId].type === 'CIRCLE') {
-      var distance = Util.calculateDistance(
-        trackers[trackerId].location.lat,
-        trackers[trackerId].location.lng,
-        geofences[geofenceId].circle.center.lat,
-        geofences[geofenceId].circle.center.lng,
-        'M'
-      )
-      trackerInGeofence = distance < geofences[geofenceId].circle.radius
-    } else {
-      var trackerPositionShort = [trackers[trackerId].location.lat, trackers[trackerId].location.lng]
-      var geofencePathShort = []
-      if (geofences[geofenceId].type === 'POLYGON') {
-        geofences[geofenceId].polygon.path.forEach((point) => {
-          geofencePathShort.push([point.lat, point.lng])
-        })
-      } else {
-        geofences[geofenceId].rectangle.path.forEach((point) => {
-          geofencePathShort.push([point.lat, point.lng])
-        })
+  var trackerGeofencesPrevious = vehicles[vehicleId].geofences || []
+  var trackerInGeofence = Geo.geofencesLocationMatch(vehicles[vehicleId].location)
+  vehicles[vehicleId].geofences = trackerInGeofence
+  if (notrigger) return
+
+  trackerInGeofence.filter(active => trackerGeofencesPrevious.indexOf(active)).forEach(geofenceId => {
+    Homey.manager('flow').triggerDevice('vehicleGeofenceEntered', null,
+      {geofence: geofenceId},
+      {id: vehicleId, homeyDriverName: 'models'},
+      function (error, result) {
+        Util.debugLog('flow trigger vehicle entered geofence', {id: vehicleId, geofenceId: geofenceId, error: error, result: result})
       }
-      trackerInGeofence = Inside(trackerPositionShort, geofencePathShort)
-    }
-    if ((trackerInGeofence) && (!trackerWasInGeofence)) {
-      trackers[trackerId].geofences.push(geofenceId)
-      if (!notrigger) {
-        Homey.manager('flow').triggerDevice(
-          'vehicle_geofence_entered',
-          null, // notokens
-          {geofence: geofenceId},
-          {id: trackerId},
-          function (err, result) {
-            Util.debugLog('flow trigger vehicle_geofence_entered ', {id: trackerId, geofenceId: geofenceId, error: err, result: result})
-          }
-        )
+    )
+  })
+  trackerGeofencesPrevious.filter(previous => trackerInGeofence.indexOf(previous)).forEach(geofenceId => {
+    Homey.manager('flow').triggerDevice('vehicleGeofenceLeft', null,
+      {geofence: geofenceId},
+      {id: vehicleId, homeyDriverName: 'models'},
+      function (error, result) {
+        Util.debugLog('flow trigger vehicle left geofence', {id: vehicleId, geofenceId: geofenceId, error: error, result: result})
       }
-    }
-    if ((!trackerInGeofence) && (trackerWasInGeofence)) {
-      trackers[trackerId].geofences.splice(trackers[trackerId].geofences.indexOf(geofenceId), 1)
-      if (!notrigger) {
-        Homey.manager('flow').triggerDevice(
-          'vehicle_geofence_left',
-          null, // notokens
-          {geofence: geofenceId},
-          {id: trackerId},
-          function (err, result) {
-            Util.debugLog('flow trigger vehicle_geofence_left ', {id: trackerId, geofenceId: geofenceId, error: err, result: result})
-          }
-        )
-      }
-    }
+    )
   })
 }
 
-function stopMoving (trackerId) {
-  Util.debugLog('stopMoving called', {trackerId: trackerId, moving: trackers[trackerId].moving})
-  trackerTimeoutObjects[trackerId] = null
-  if (!trackers[trackerId].moving) return
-  if (!trackers[trackerId].route) return
+function stopMoving (vehicleId) {
+  Util.debugLog('stopMoving called', {vehicleId: vehicleId, moving: vehicles[vehicleId].moving})
+  if (!vehicles[vehicleId].moving) return
+  if (!vehicles[vehicleId].route) return
 
   // create route object for persistancy
-  var route = trackers[trackerId].route
-  route.end = trackers[trackerId].location
-  route.end.time = trackers[trackerId].timeLastUpdate
-  route.trackerId = trackerId
+  var route = vehicles[vehicleId].route
+  route.end = vehicles[vehicleId].location
+  route.end.time = vehicles[vehicleId].timeLastCheck
+  route.vehicleId = vehicleId
 
   // only save route if distance > 1000m
-  if ((trackers[trackerId].route.distance || 0) > 1000) {
+  if ((vehicles[vehicleId].route.distance || 0) > 1000) {
     // TODO: Read setting if route analysis is allowed
     var allRoutes = Homey.manager('settings').get('teslaRoutes') || []
     allRoutes.push(route)
     Homey.manager('settings').set('teslaRoutes', allRoutes)
   }
   // update tracker
-  delete trackers[trackerId].route
-  trackers[trackerId].moving = false
-  Homey.manager('api').realtime('teslaLocation', trackers[trackerId])
+  delete vehicles[vehicleId].route
+  vehicles[vehicleId].moving = false
+  Homey.manager('api').realtime('teslaLocation', vehicles[vehicleId])
 
   // handle flows
   var tokens = {
@@ -115,12 +78,12 @@ function stopMoving (trackerId) {
   }
 
   Homey.manager('flow').triggerDevice(
-    'vehicle_stopt_moving',
+    'vehicleStoptMoving',
     tokens,
     null,
-    {id: trackerId},
+    {id: vehicleId, homeyDriverName: 'models'},
     function (err, result) {
-      Util.debugLog('flow trigger vehicle_stopt_moving ', {id: trackerId, error: err, result: result})
+      Util.debugLog('flow trigger vehicle_stopt_moving ', {id: vehicleId, error: err, result: result})
     }
   )
 }
@@ -140,171 +103,138 @@ function initiateTracking () {
     user: settings.user,
     password: settings.password,
     grant: Homey.manager('settings').get('teslaGrant'),
-    language: Homey.manager('i18n').getLanguage(),
-    intervalMS: 10000 // TODO: read from app setting
+    language: Homey.manager('i18n').getLanguage()
   })
 
-  if (!Object.keys(trackers).length) return Util.debugLog('  no devices to track!')
+  if (!Object.keys(vehicles).length) return Util.debugLog('  no devices to track!')
   teslaApi.on('error', error => { Util.debugLog('event: error', error) })
   teslaApi.on('grant', newgrant => { Homey.manager('settings').set('teslaGrant', newgrant) })
 
-  Object.keys(trackers).forEach((trackerId) => {
-    teslaApi.getLocation(trackerId).then(location => {
-      trackers[trackerId].location = location
-    })
-    trackers[trackerId].timeLastTrigger = 0
-    // clear route tracking if tracker is not moving or never initiated before
-    if (trackers[trackerId].moving !== true) {
-      trackers[trackerId].moving = null // picked on location event
-      if (trackerTimeoutObjects[trackerId]) {
-        clearTimeout(trackerTimeoutObjects[trackerId])
-        trackerTimeoutObjects[trackerId] = null
-        delete trackers[trackerId].route
+  Object.keys(vehicles).forEach(vehicleId => {
+    teslaApi.getLocation(vehicleId).then(location => {
+      Util.debugLog('initial location for vehicle', {id: vehicleId, location: location})
+      vehicles[vehicleId].location = location
+      vehicles[vehicleId].timeLastTrigger = 0
+
+      // clear route tracking if tracker is not moving or never initiated before
+      if (!vehicles[vehicleId].moving) delete vehicles[vehicleId].route
+      if (trackerIntervalObjects[vehicleId]) {
+        clearInterval(trackerIntervalObjects[vehicleId])
+        trackerIntervalObjects[vehicleId] = null
       }
-    }
-  })
 
-  return Util.debugLog('  polling not yet supported by this app')
-  if (!settings.polling) return Util.debugLog('  polling disabled in settings')
-  // >> TODO revisit dead code below
-
-  teslaApi.on('tracking_terminated', (reason) => {
-    if (tracking) {
-      Util.debugLog('event: tracking_terminated, will retry in 10 minutes.', reason)
-      tracking = null
-      if (!retryTrackingTimeoutId) {
-        retryTrackingTimeoutId = setTimeout(initiateTracking, 10 * 60 * 1000)
-      }
-    }
-  })
-  teslaApi.on('message', (trackerId, data) => {
-    Util.debugLog('event: message', {id: trackerId, distance: data.distance})
-  })
-  teslaApi.on('location', (trackerId, data) => {
-    var previousLocation = trackers[trackerId].location
-    var place = data.address.place
-    var city = data.address.city
-    var wasMoving = trackers[trackerId].moving
-
-    trackers[trackerId].location = {
-      place: place,
-      city: city,
-      lat: data.y,
-      lng: data.x
-    }
-    trackers[trackerId].timeLastUpdate = data.t * 1000
-
-    var timeConstraint = (trackers[trackerId].timeLastUpdate - trackers[trackerId].timeLastTrigger) < (trackers[trackerId].settings.retriggerRestrictTime * 1000)
-    var distanceConstraint = data.distance < trackers[trackerId].settings.retriggerRestrictDistance
-
-    // ignore initial location on (re)initiation
-    if (wasMoving == null) {
-      trackers[trackerId].moving = false
-      checkGeofencesForVehicle(trackerId, true)
-      Util.debugLog('initial location for vehicle', {id: trackerId, place: place, city: city})
-      return
-    }
-
-    // handle flows
-    Util.debugLog('event: location', {id: trackerId, place: place, city: city, distance: data.distance, wasMoving: wasMoving, timeConstraint: timeConstraint, distanceConstraint: distanceConstraint})
-    checkGeofencesForVehicle(trackerId)
-    if (wasMoving) {
-      // next if part is temp fix. Should be removed when bug final fixed
-      if (!trackers[trackerId].route) {
-        Util.debugLog('vehicle was moving, but without route object', {id: trackerId, tracker: trackers[trackerId]})
-        trackers[trackerId].route = {
-          distance: data.distance,
-          start: previousLocation
-        }
+      if (!settings.polling) {
+        Util.debugLog('  polling disabled in app settings')
       } else {
-        trackers[trackerId].route.distance += data.distance
+        checkGeofencesForVehicle(vehicleId, true)
+        trackerIntervalObjects[vehicleId] = setInterval(
+          checkNewLocation, vehicles[vehicleId].settings.pollInterval * 1000, vehicleId
+        )
       }
-    }
+    })
+  })
+} // function initiateTracking
 
-    if (!wasMoving && !distanceConstraint) {
-      trackers[trackerId].moving = true
-      trackers[trackerId].route = {
-        distance: data.distance,
+function checkNewLocation (vehicleId) {
+  teslaApi.getDriveState(vehicleId).then(state => {
+    vehicles[vehicleId].timeLastCheck = new Date()
+    if (state.shift_state === null && vehicles[vehicleId].moving) {
+      return stopMoving(vehicleId)
+    }
+    var distance = Geo.calculateDistance(state.latitude, state.longitude, vehicles[vehicleId].location.lat, vehicles[vehicleId].location.lng)
+    if (distance > 1) {
+      teslaApi.getLocation(vehicleId).then(location => {
+        processNewLocation(vehicleId, distance, location)
+      })
+    }
+  }).catch(reason => {
+    Util.debugLog('error in checkNewLocation: tracking terminated, will retry in 5 minutes.', reason)
+    clearInterval(trackerIntervalObjects[vehicleId])
+    trackerIntervalObjects[vehicleId] = null
+    if (!retryTrackingTimeoutId) {
+      retryTrackingTimeoutId = setTimeout(initiateTracking, retryTrackingTimeoutMs)
+    }
+  })
+}
+
+function processNewLocation (vehicleId, distance, location) {
+  var previousLocation = vehicles[vehicleId].location
+  var wasMoving = vehicles[vehicleId].moving
+
+  vehicles[vehicleId].location = location
+  vehicles[vehicleId].timeLastUpdate = new Date().getTime()
+  Homey.manager('api').realtime('teslaLocation', vehicles[vehicleId])
+
+  var timeConstraint = (vehicles[vehicleId].timeLastUpdate - vehicles[vehicleId].timeLastTrigger) < (vehicles[vehicleId].settings.retriggerRestrictTime * 1000)
+  var distanceConstraint = distance < vehicles[vehicleId].settings.retriggerRestrictDistance
+
+  // handle flows
+  Util.debugLog('event: location', {id: vehicleId, place: location.place, city: location.city, distance: distance, wasMoving: wasMoving, timeConstraint: timeConstraint, distanceConstraint: distanceConstraint})
+  checkGeofencesForVehicle(vehicleId)
+  if (wasMoving) {
+    // next if part is temp fix. Should be removed when bug final fixed
+    if (!vehicles[vehicleId].route) {
+      Util.debugLog('vehicle was moving, but without route object', {id: vehicleId, tracker: vehicles[vehicleId]})
+      vehicles[vehicleId].route = {
+        distance: distance,
         start: previousLocation
       }
-      trackers[trackerId].route.start.time = data.t * 1000
-      Homey.manager('flow').triggerDevice(
-        'vehicle_start_moving',
-        {
-          address: Util.createAddressSpeech(previousLocation.place, previousLocation.city),
-          distance: Math.ceil(data.distance) || 0
-        },
-        null,
-        {id: trackerId},
-        (err, result) => {
-          Util.debugLog('flow trigger vehicle_start_moving ', {id: trackerId, error: err, result: result})
-        }
-      )
+    } else {
+      vehicles[vehicleId].route.distance += distance
     }
+  }
 
-    if (!timeConstraint && !distanceConstraint) {
-      trackers[trackerId].timeLastTrigger = data.t * 1000
-      Homey.manager('flow').triggerDevice(
-        'vehicle_moved',
-        {
-          address: Util.createAddressSpeech(place, city),
-          distance: Math.ceil(data.distance) || 0
-        },
-        null,
-        {id: trackerId},
-        (err, result) => {
-          Util.debugLog('flow trigger vehicle_moved ', {id: trackerId, error: err, result: result})
-        }
-      )
+  if (!wasMoving && !distanceConstraint) {
+    vehicles[vehicleId].moving = true
+    vehicles[vehicleId].route = {
+      distance: distance,
+      start: previousLocation
     }
+    vehicles[vehicleId].route.start.time = new Date().getTime()
+    Homey.manager('flow').triggerDevice('vehicleStartMoving', {
+      address: Util.createAddressSpeech(previousLocation.place, previousLocation.city),
+      distance: Math.ceil(distance) || 0
+    }, null, {id: vehicleId, homeyDriverName: 'models'}, (error, result) => {
+      Util.debugLog('flow trigger vehicle_start_moving ', {id: vehicleId, error: error, result: result})
+    })
+  }
 
-    // postpone stopmoving trigger
-    if (trackers[trackerId].moving) {
-      if (trackerTimeoutObjects[trackerId]) clearTimeout(trackerTimeoutObjects[trackerId])
-      trackerTimeoutObjects[trackerId] = setTimeout(
-        stopMoving,
-        trackers[trackerId].settings.stoppedMovingTimeout * 1000,
-        trackerId
-      )
-    }
-
-    Homey.manager('api').realtime('teslaLocation', trackers[trackerId])
-  })
-  teslaApi.startTracking(Object.keys(trackers))
-} // function initiateTracking
+  if (!timeConstraint && !distanceConstraint) {
+    vehicles[vehicleId].timeLastTrigger = new Date().getTime()
+    Homey.manager('flow').triggerDevice('vehicleMoved', {
+      address: Util.createAddressSpeech(location.place, location.city),
+      distance: Math.ceil(distance) || 0
+    }, null, {id: vehicleId, homeyDriverName: 'models'}, (err, result) => {
+      Util.debugLog('flow trigger vehicle_moved ', {id: vehicleId, error: err, result: result})
+    })
+  }
+} // function processNewLocation
 
 var self = {
   init: function (devices, callback) {
-    // TODO: use promisses to resolve asynch issues
-
     devices.forEach(device => {
       Homey.manager('drivers').getDriver(device.homeyDriverName).getName(device, (error, name) => {
         Util.debugLog('Initiate device', {name: name, data: device})
         if (error) return
-        trackers[device.id] = {
-          trackerId: device.id,
+        vehicles[device.id] = {
+          vehicleId: device.id,
           name: name,
           location: {},
+          moving: false,
           geofences: []
         }
-        trackerTimeoutObjects[device.id] = null
+        trackerIntervalObjects[device.id] = null
         module.exports.getSettings(device, (error, settings) => {
           if (error) Util.debugLog('Error on loading device settings', {device: device, error: error})
-          var trackersettings = {
+          var vehiclesettings = {
             retriggerRestrictTime: settings.retriggerRestrictTime || 1,
             retriggerRestrictDistance: settings.retriggerRestrictDistance || 1,
-            stoppedMovingTimeout: settings.stoppedMovingTimeout || 120
+            pollInterval: settings.pollInterval || 20
           }
-          trackers[device.id].settings = trackersettings
+          vehicles[device.id].settings = vehiclesettings
         })
       })
     })
-
-    // Init flows
-    FlowConditions.init()
-    FlowActions.init()
-    // Init speech
-    SpeechHandlers.init()
 
     Homey.manager('settings').on('set', (setting) => {
       switch (setting) {
@@ -322,17 +252,21 @@ var self = {
     })
 
     // delay initiation because getting settings per device take time
-    setTimeout(initiateTracking, 3000)
+    setTimeout(initiateTracking, 2000)
     setTimeout(callback, 6000)
   },
   renamed: function (device, name, callback) {
     Util.debugLog('rename vehicle', [device, name])
-    trackers[device.id].name = name
+    vehicles[device.id].name = name
     callback()
   },
   deleted: function (device) {
     Util.debugLog('delete vehicle', device)
-    delete trackers[device.id]
+    if (trackerIntervalObjects[device.id]) {
+      clearInterval(trackerIntervalObjects[device.id])
+      trackerIntervalObjects[device.id] = null
+    }
+    delete vehicles[device.id]
     initiateTracking()
   },
   pair: function (socket) {
@@ -359,34 +293,31 @@ var self = {
     })
     socket.on('add_device', (device, callback) => {
       Util.debugLog('pairing: vehicle added', device)
-      trackers[device.data.id] = {
-        trackerId: device.data.id,
+      vehicles[device.data.id] = {
+        vehicleId: device.data.id,
         name: device.name,
         location: {},
+        moving: false,
         geofences: [],
         settings: {
-          retriggerRestrictTime: 1,
+          retriggerRestrictTime: 10,
           retriggerRestrictDistance: 1,
-          stoppedMovingTimeout: 120
+          pollInterval: 20
         }
       }
-      trackerTimeoutObjects[device.data.id] = null
+      trackerIntervalObjects[device.data.id] = null
       initiateTracking()
       callback(null)
     })
   },
   settings: function (device, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
     Util.debugLog('settings changed', {device: device, newSettingsObj: newSettingsObj, changedKeysArr: changedKeysArr})
-
-    // TODO: translate errors
-    if (newSettingsObj.retriggerRestrictTime < 0) { return callback('Negative value') }
-    if (newSettingsObj.retriggerRestrictDistance < 0) { return callback('Negative value') }
-    if (newSettingsObj.stoppedMovingTimeout < 30) { return callback('Timout cannot be smaller than 30 seconds') }
     try {
-      changedKeysArr.forEach(key => { trackers[device.id].settings[key] = newSettingsObj[key] })
+      changedKeysArr.forEach(key => { vehicles[device.id].settings[key] = newSettingsObj[key] })
+      if (newSettingsObj.pollInterval) { initiateTracking() }
       callback(null, true)
-    } catch (e) {
-      callback(e)
+    } catch (error) {
+      callback(error)
     }
   },
   capabilities: {
@@ -394,15 +325,9 @@ var self = {
       get: function (device, callback) {
         Util.debugLog('capabilities > location > get', device)
         if (!teslaApi) return callback('not_initiated')
-        teslaApi.getDriveState(device.id)
-        .then(state => {
-          var location = {
-            lng: state.longitude,
-            lat: state.latitude
-          }
+        teslaApi.getLocation(device.id).then(location => {
           callback(null, JSON.stringify(location))
-        })
-        .catch(callback)
+        }).catch(callback)
       }
     },
     moving: {
@@ -415,7 +340,7 @@ var self = {
       }
     }
   },
-  getVehicles: () => { return trackers },
+  getVehicles: () => { return vehicles },
   getApi: () => {
     return new Promise((resolve, reject) => {
       if (!teslaApi) return reject('no_settings')

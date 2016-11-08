@@ -1,7 +1,7 @@
 {
   "id":"com.tesla",
-  "version":"0.1.0",
-  "compatibility":">=0.10.5",
+  "version":"0.2.0",
+  "compatibility":">=0.10.9",
   "name":{
     "en":"Tesla",
     "nl":"Tesla"
@@ -75,21 +75,19 @@
             "nl":"Instellingen"
           },
           "children":[
-            {
-              "id":"retriggerRestrictTime",
+            { "id":"retriggerRestrictTime",
               "type":"number",
               "label":{
                 "en":"Minimum time between movement triggers (seconds)",
                 "nl":"Minimumtijd tussen beweging triggers (seconden)"
               },
-              "value": 1,
+              "value": 10,
               "attr":{
                 "min": 0,
                 "max": 86400
               }
             },
-            {
-              "id":"retriggerRestrictDistance",
+            { "id":"retriggerRestrictDistance",
               "type":"number",
               "label":{
                 "en":"Minimum distance travelled between movement triggers (meters)",
@@ -101,17 +99,16 @@
                 "max": 40075000
               }
             },
-            {
-              "id":"stoppedMovingTimeout",
+            { "id":"pollInterval",
               "type":"number",
               "label":{
-                "en":"Minimum time between last new location and trigger 'stops moving' (seconds)",
-                "nl":"Minimumtijd tussen laatst ontvangen locatie en trigger 'einde beweging' (seconden)"
+                "en":"Polling interval for location and geofence tracking (seconds)",
+                "nl":"Poll-interval voor bijhouden locatie en geofences (seconden)"
               },
-              "value": 120,
+              "value": 20,
               "attr":{
-                "min": 30,
-                "max": 86400
+                "min": 10,
+                "max": 600
               }
             }
           ]
@@ -136,6 +133,155 @@
     }
   ],
   "flow": {
+    "triggers":[
+      { "id":"vehicleMoved",
+        "title":{
+          "en":"Location changed",
+          "nl":"Locatie gewijzigd"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ],
+        "tokens":[
+          {
+            "name":"address",
+            "title":{
+              "en":"address",
+              "nl":"adres"
+            },
+            "example":{
+              "en":"Piccadilly Circus, London",
+              "nl":"Kalverstraat in Amsterdam"
+            }
+          },{
+            "name":"distance",
+            "title":{
+              "en":"distance",
+              "nl":"afstand"
+            },
+            "example":{
+              "en":"2500"
+            }
+          }
+        ]
+      },
+      { "id":"vehicleStartMoving",
+        "title":{
+          "en":"Starts moving",
+          "nl":"Komt in beweging"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ],
+        "tokens":[
+          {
+            "name":"address",
+            "title":{
+              "en":"address",
+              "nl":"adres"
+            },
+            "example":{
+              "en":"Piccadilly Circus, London",
+              "nl":"Kalverstraat in Amsterdam"
+            }
+          },{
+            "name":"distance",
+            "title":{
+              "en":"distance",
+              "nl":"afstand"
+            },
+            "example":{
+              "en":"25.54"
+            }
+          }
+        ]
+      },
+      { "id":"vehicleStoptMoving",
+        "title":{
+          "en":"Stops moving",
+          "nl":"Stopt beweging"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          }
+        ],
+        "tokens":[
+          {
+            "name":"start_location",
+            "title":{
+              "en":"start address",
+              "nl":"beginpunt"
+            },
+            "example":{
+              "en":"Piccadilly Circus, London",
+              "nl":"Kalverstraat in Amsterdam"
+            }
+          },{
+            "name":"stop_location",
+            "title":{
+              "en":"end address",
+              "nl":"bestemming"
+            },
+            "example":{
+              "en":"Piccadilly Circus, London",
+              "nl":"Kalverstraat in Amsterdam"
+            }
+          },{
+            "name":"distance",
+            "title":{
+              "en":"distance travelled",
+              "nl":"afgelegde afstand"
+            },
+            "example":{
+              "en":"2500.21"
+            }
+          }
+        ]
+      },
+      { "id":"vehicleGeofenceEntered",
+        "title":{
+          "en":"Entered geofence",
+          "nl":"Betreed geofence"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "geofence",
+            "type": "autocomplete"
+          }
+        ]
+      },
+      { "id":"vehicleGeofenceLeft",
+        "title":{
+          "en":"Left geofence",
+          "nl":"Verlaat geofence"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "geofence",
+            "type": "autocomplete"
+          }
+        ]
+      }
+    ],
     "conditions": [
       { "id":"autoConditioningState",
         "title":{
@@ -198,6 +344,22 @@
             "name": "device",
             "type": "device",
             "filter":"driver_id=models"
+          }
+        ]
+      },
+      { "id":"vehicleGeofence",
+        "title":{
+          "en":"Is !{{|not}} in geofence",
+          "nl":"Is !{{|niet}} in geofence"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter":"driver_id=models"
+          },{
+            "name": "geofence",
+            "type": "autocomplete"
           }
         ]
       },

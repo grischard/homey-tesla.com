@@ -592,7 +592,7 @@ function loadVehicles () {
         map: null,
         draggable: false
       })
-      vehicleMarker.vehicleId = vehicleId
+      vehicleMarker.vehicleId = vehicles[vehicleId].trackerId
       google.maps.event.addListener(vehicleMarker, 'click', function () {
         infowindow.open(map, vehicleMarker)
       })
@@ -606,7 +606,7 @@ function subscribeVehicleUpdates () {
   Homey.on('teslaLocation', function (data) {
     console.log('Vehicle: new location ', data)
     $.each(vehicleMarkers, function (index) {
-      if (vehicleMarkers[index].vehicleId === data.vehicleId) {
+      if (vehicleMarkers[index].vehicleId === data.trackerId) {
         vehicleMarkers[index].setPosition(new google.maps.LatLng(data.location.lat, data.location.lng))
         if (data.moving) {
           vehicleMarkers[index].setAnimation(google.maps.Animation.BOUNCE)

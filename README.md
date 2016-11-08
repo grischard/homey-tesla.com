@@ -1,19 +1,19 @@
-# homey-tesla.com
-Homey App: Control your Tesla Model S
-
-# Alpha version under construction
+# Tesla
+Control your Tesla Model S
 
 ## Speech
 Ask the actual location of your tesla with 'Tesla [car name]' or 'What is location of [car name]'
 
 ## Trigger cards
-under construction
+- Vehicle starts or stops driving
+- Vehicle entered or left geofence
 
 ## Condition cards
 - Airco is on/off
 - Airco setpoint is above/below temp x
 - Panoroof is open/closed
 - Vehicle is moving/stationary
+- Vehicle is in geofence
 - Api condition (check any value in the Api, third parameter required, even when not relevant)
 
 ## Action cards
