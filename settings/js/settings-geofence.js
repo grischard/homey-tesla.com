@@ -584,22 +584,26 @@ function loadVehicles () {
     vehicles = result
     $.each(vehicles, function (vehicleId) {
       var vehicleLocation = new google.maps.LatLng(vehicles[vehicleId].location.lat, vehicles[vehicleId].location.lng)
-      var infowindow = new google.maps.InfoWindow({
-        content: '' + vehicles[vehicleId].name
-      })
       var vehicleMarker = new google.maps.Marker({
         position: vehicleLocation,
         map: null,
         draggable: false
       })
       vehicleMarker.vehicleId = vehicles[vehicleId].trackerId
+      vehicleMarker.infowindow = new google.maps.InfoWindow({
+        content: vehicleInfoWindow(vehicleId, vehicles[vehicleId].location)
+      })
       google.maps.event.addListener(vehicleMarker, 'click', function () {
-        infowindow.open(map, vehicleMarker)
+        vehicleMarker.infowindow.open(map, vehicleMarker)
       })
       vehicleMarkers.push(vehicleMarker)
     })
     showVehicles()
   })
+}
+
+function vehicleInfoWindow (vehicleId, location) {
+  return `<strong>${vehicles[vehicleId].name}</strong><br>${location.city} - ${location.place}`
 }
 
 function subscribeVehicleUpdates () {
@@ -608,6 +612,7 @@ function subscribeVehicleUpdates () {
     $.each(vehicleMarkers, function (index) {
       if (vehicleMarkers[index].vehicleId === data.trackerId) {
         vehicleMarkers[index].setPosition(new google.maps.LatLng(data.location.lat, data.location.lng))
+        vehicleMarkers[index].infowindow.setContent(vehicleInfoWindow(index, data.location))
         if (data.moving) {
           vehicleMarkers[index].setAnimation(google.maps.Animation.BOUNCE)
         } else {

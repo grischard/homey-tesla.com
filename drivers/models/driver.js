@@ -6,6 +6,7 @@ var Util = require('../../lib/util.js')
 var Geo = require('../../lib/geofences.js')
 
 const retryTrackingTimeoutMs = 5 * 60 * 1000
+const mi2km = 1.609344
 
 var teslaApi = null
 var retryTrackingTimeoutId = null
@@ -58,34 +59,40 @@ function stopMoving (vehicleId) {
   route.end.time = vehicles[vehicleId].timeLastCheck
   route.vehicleId = vehicleId
 
-  // only save route if distance > 1000m
-  if ((vehicles[vehicleId].route.distance || 0) > 1000) {
-    // TODO: Read setting if route analysis is allowed
-    var allRoutes = Homey.manager('settings').get('teslaRoutes') || []
-    allRoutes.push(route)
-    Homey.manager('settings').set('teslaRoutes', allRoutes)
-  }
-  // update tracker
-  delete vehicles[vehicleId].route
-  vehicles[vehicleId].moving = false
-  Homey.manager('api').realtime('teslaLocation', vehicles[vehicleId])
+  teslaApi.getVehicleState(vehicleId).then(vehicleState => {
+    vehicles[vehicleId].route.end.odometer = vehicleState.odometer * mi2km
 
-  // handle flows
-  var tokens = {
-    start_location: Util.createAddressSpeech(route.start.place, route.start.city),
-    stop_location: Util.createAddressSpeech(route.end.place, route.end.city),
-    distance: Math.ceil(route.distance) || 0
-  }
-
-  Homey.manager('flow').triggerDevice(
-    'vehicleStoptMoving',
-    tokens,
-    null,
-    {id: vehicleId, homeyDriverName: 'models'},
-    function (err, result) {
-      Util.debugLog('flow trigger vehicle_stopt_moving ', {id: vehicleId, error: err, result: result})
+    // only save route if distance > 1000m
+    if ((vehicles[vehicleId].route.distance || 0) > 1000) {
+      // TODO: Read setting if route analysis is allowed
+      var allRoutes = Homey.manager('settings').get('teslaRoutes') || []
+      allRoutes.push(route)
+      Homey.manager('settings').set('teslaRoutes', allRoutes)
     }
-  )
+    // update tracker
+    delete vehicles[vehicleId].route
+    vehicles[vehicleId].moving = false
+    Homey.manager('api').realtime('teslaLocation', vehicles[vehicleId])
+
+    // handle flows
+    var tokens = {
+      start_location: Util.createAddressSpeech(route.start.place, route.start.city),
+      stop_location: Util.createAddressSpeech(route.end.place, route.end.city),
+      distance: Math.ceil(route.distance) || 0
+    }
+
+    Homey.manager('flow').triggerDevice(
+      'vehicleStoptMoving',
+      tokens,
+      null,
+      {id: vehicleId, homeyDriverName: 'models'},
+      function (err, result) {
+        Util.debugLog('flow trigger vehicle_stopt_moving ', {id: vehicleId, error: err, result: result})
+      }
+    )
+  }).catch(reason => {
+    Util.debugLog('fatal error on odometer request on stop moving', {id: vehicleId, error: reason})
+  })
 }
 
 function initiateTracking () {
@@ -115,6 +122,7 @@ function initiateTracking () {
       Util.debugLog('initial location for vehicle', {id: vehicleId, location: location})
       vehicles[vehicleId].location = location
       vehicles[vehicleId].timeLastTrigger = 0
+      vehicles[vehicleId].pollErrors = 0
 
       // clear route tracking if tracker is not moving or never initiated before
       if (!vehicles[vehicleId].moving) delete vehicles[vehicleId].route
@@ -131,12 +139,21 @@ function initiateTracking () {
           checkNewLocation, vehicles[vehicleId].settings.pollInterval * 1000, vehicleId
         )
       }
+    }).catch(reason => {
+      Util.debugLog('error with loading initial location: tracking terminated, will retry in 5 minutes.', reason)
+      if (!retryTrackingTimeoutId) {
+        retryTrackingTimeoutId = setTimeout(initiateTracking, retryTrackingTimeoutMs)
+      }
     })
   })
 } // function initiateTracking
 
 function checkNewLocation (vehicleId) {
   teslaApi.getDriveState(vehicleId).then(state => {
+    if (vehicles[vehicleId].pollErrors > 0) {
+      vehicles[vehicleId].pollErrors = 0
+      Util.debugLog('poll restored in checkNewLocation')
+    }
     vehicles[vehicleId].timeLastCheck = new Date()
     if (state.shift_state === null && vehicles[vehicleId].moving) {
       return stopMoving(vehicleId)
@@ -148,11 +165,16 @@ function checkNewLocation (vehicleId) {
       })
     }
   }).catch(reason => {
-    Util.debugLog('error in checkNewLocation: tracking terminated, will retry in 5 minutes.', reason)
-    clearInterval(trackerIntervalObjects[vehicleId])
-    trackerIntervalObjects[vehicleId] = null
-    if (!retryTrackingTimeoutId) {
-      retryTrackingTimeoutId = setTimeout(initiateTracking, retryTrackingTimeoutMs)
+    vehicles[vehicleId].pollErrors ++
+    if (vehicles[vehicleId].pollErrors === 4) {
+      Util.debugLog('poll error in checkNewLocation (' + vehicles[vehicleId].pollErrors + '): tracking terminated, will retry in 5 minutes.', reason)
+      clearInterval(trackerIntervalObjects[vehicleId])
+      trackerIntervalObjects[vehicleId] = null
+      if (!retryTrackingTimeoutId) {
+        retryTrackingTimeoutId = setTimeout(initiateTracking, retryTrackingTimeoutMs)
+      }
+    } else {
+      Util.debugLog('poll error in checkNewLocation (' + vehicles[vehicleId].pollErrors + ').', reason)
     }
   })
 }
@@ -206,6 +228,12 @@ function processNewLocation (vehicleId, distance, location) {
       distance: Math.ceil(distance) || 0
     }, null, {id: vehicleId, homeyDriverName: 'models'}, (err, result) => {
       Util.debugLog('flow trigger vehicle_moved ', {id: vehicleId, error: err, result: result})
+    })
+  }
+
+  if (!vehicles[vehicleId].route.start.odometer) {
+    teslaApi.getVehicleState(vehicleId).then(vehicleState => {
+      vehicles[vehicleId].route.start.odometer = vehicleState.odometer * mi2km
     })
   }
 } // function processNewLocation
