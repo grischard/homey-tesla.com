@@ -583,20 +583,22 @@ function loadVehicles () {
     if (error) return console.error(error)
     vehicles = result
     $.each(vehicles, function (vehicleId) {
-      var vehicleLocation = new google.maps.LatLng(vehicles[vehicleId].location.lat, vehicles[vehicleId].location.lng)
-      var vehicleMarker = new google.maps.Marker({
-        position: vehicleLocation,
-        map: null,
-        draggable: false
-      })
-      vehicleMarker.vehicleId = vehicles[vehicleId].trackerId
-      vehicleMarker.infowindow = new google.maps.InfoWindow({
-        content: vehicleInfoWindow(vehicleId, vehicles[vehicleId].location)
-      })
-      google.maps.event.addListener(vehicleMarker, 'click', function () {
-        vehicleMarker.infowindow.open(map, vehicleMarker)
-      })
-      vehicleMarkers.push(vehicleMarker)
+      if (vehicles[vehicleId].location.lat) {
+        var vehicleLocation = new google.maps.LatLng(vehicles[vehicleId].location.lat, vehicles[vehicleId].location.lng)
+        var vehicleMarker = new google.maps.Marker({
+          position: vehicleLocation,
+          map: null,
+          draggable: false
+        })
+        vehicleMarker.vehicleId = vehicles[vehicleId].trackerId
+        vehicleMarker.infowindow = new google.maps.InfoWindow({
+          content: vehicleInfoWindow(vehicleId, vehicles[vehicleId].location)
+        })
+        google.maps.event.addListener(vehicleMarker, 'click', function () {
+          vehicleMarker.infowindow.open(map, vehicleMarker)
+        })
+        vehicleMarkers.push(vehicleMarker)
+      }
     })
     showVehicles()
   })
