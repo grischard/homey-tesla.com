@@ -20,7 +20,7 @@
   },
   "category":[
 		"tools",
-		"location"
+		"localization"
 	],
   "permissions":[
     "homey:manager:geolocation",
