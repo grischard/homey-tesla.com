@@ -1,6 +1,6 @@
 {
   "id":"com.tesla",
-  "version":"1.0.0",
+  "version":"1.0.1",
   "compatibility":">=0.10.9",
   "name":{
     "en":"Tesla",
@@ -18,7 +18,10 @@
     "large":"./assets/images/large.png",
     "small":"./assets/images/small.png"
   },
-  "category":"tools",
+  "category":[
+		"tools",
+		"location"
+	],
   "permissions":[
     "homey:manager:geolocation",
     "homey:manager:speech-input",
