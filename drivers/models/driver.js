@@ -119,6 +119,8 @@ function initiateTracking () {
 
   Object.keys(vehicles).forEach(vehicleId => {
     teslaApi.getLocation(vehicleId).then(location => {
+      module.exports.realtime({id: vehicleId, homeyDriverName: 'models'}, 'location', JSON.stringify(location))
+      module.exports.realtime({id: vehicleId, homeyDriverName: 'models'}, 'location_human', location.place + ', ' + location.city)
       Util.debugLog('initial location for vehicle', {id: vehicleId, location: location})
       vehicles[vehicleId].location = location
       vehicles[vehicleId].timeLastTrigger = 0
@@ -186,6 +188,8 @@ function processNewLocation (vehicleId, distance, location) {
   vehicles[vehicleId].location = location
   vehicles[vehicleId].timeLastUpdate = new Date().getTime()
   Homey.manager('api').realtime('teslaLocation', vehicles[vehicleId])
+  module.exports.realtime({id: vehicleId, homeyDriverName: 'models'}, 'location', JSON.stringify(location))
+  module.exports.realtime({id: vehicleId, homeyDriverName: 'models'}, 'location_human', location.place + ', ' + location.city)
 
   var timeConstraint = (vehicles[vehicleId].timeLastUpdate - vehicles[vehicleId].timeLastTrigger) < (vehicles[vehicleId].settings.retriggerRestrictTime * 1000)
   var distanceConstraint = distance < vehicles[vehicleId].settings.retriggerRestrictDistance
@@ -355,6 +359,15 @@ var self = {
         if (!teslaApi) return callback('not_initiated')
         teslaApi.getLocation(device.id).then(location => {
           callback(null, JSON.stringify(location))
+        }).catch(callback)
+      }
+    },
+    location_human: {
+      get: function (device, callback) {
+        Util.debugLog('capabilities > location_human > get', device)
+        if (!teslaApi) return callback('not_initiated')
+        teslaApi.getLocation(device.id).then(location => {
+          callback(null, location.place + ', ' + location.city)
         }).catch(callback)
       }
     },
