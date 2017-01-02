@@ -1,7 +1,7 @@
 {
   "id":"com.tesla",
-  "version":"1.1.1",
-  "compatibility":">=1.0.0",
+  "version":"1.0.2",
+  "compatibility":">=1.1.2",
   "name":{
     "en":"Tesla",
     "nl":"Tesla"
