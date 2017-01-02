@@ -100,7 +100,6 @@ function initiateTracking () {
   retryTrackingTimeoutId = null
 
   Util.debugLog('######### TESLA TRACKING ## initiateTracking #########################', {Homey: Homey.version, App: Homey.manifest.version})
-  // if (teslaApi) teslaApi.stopTracking()
   teslaApi = null
   geofences = Homey.manager('settings').get('geofences')
   var settings = Homey.manager('settings').get('teslaAccount')

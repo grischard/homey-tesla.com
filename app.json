@@ -1,6 +1,6 @@
 {
   "id":"com.tesla",
-  "version":"1.1.0",
+  "version":"1.1.1",
   "compatibility":">=1.0.0",
   "name":{
     "en":"Tesla",
@@ -58,7 +58,7 @@
     "moving": {
       "type": "boolean",
       "title": {
-        "en": "Moving",
+        "en": "Movement",
         "nl": "Onderweg"
       },
       "desc": {
@@ -199,6 +199,7 @@
               "en":"address",
               "nl":"adres"
             },
+            "type":"string",
             "example":{
               "en":"Piccadilly Circus, London",
               "nl":"Kalverstraat in Amsterdam"
@@ -209,9 +210,8 @@
               "en":"distance",
               "nl":"afstand"
             },
-            "example":{
-              "en":"2500"
-            }
+            "type":"number",
+            "example":2500
           }
         ]
       },
@@ -234,6 +234,7 @@
               "en":"address",
               "nl":"adres"
             },
+            "type":"string",
             "example":{
               "en":"Piccadilly Circus, London",
               "nl":"Kalverstraat in Amsterdam"
@@ -244,9 +245,8 @@
               "en":"distance",
               "nl":"afstand"
             },
-            "example":{
-              "en":"25.54"
-            }
+            "type":"number",
+            "example":25.54
           }
         ]
       },
@@ -269,6 +269,7 @@
               "en":"start address",
               "nl":"beginpunt"
             },
+            "type":"string",
             "example":{
               "en":"Piccadilly Circus, London",
               "nl":"Kalverstraat in Amsterdam"
@@ -279,6 +280,7 @@
               "en":"end address",
               "nl":"bestemming"
             },
+            "type":"string",
             "example":{
               "en":"Piccadilly Circus, London",
               "nl":"Kalverstraat in Amsterdam"
@@ -289,9 +291,8 @@
               "en":"distance travelled",
               "nl":"afgelegde afstand"
             },
-            "example":{
-              "en":"2500.21"
-            }
+            "type":"number",
+            "example":2500.21
           }
         ]
       },
@@ -791,8 +792,8 @@
   ],
   "speechExamples":[
     {
-      "en": "GPS [car name]",
-      "nl": "GPS [naam auto]"
+      "en": "Tesla [car name]",
+      "nl": "Tesla [naam auto]"
     },
     {
       "en": "What is address/location/position [car name]",
