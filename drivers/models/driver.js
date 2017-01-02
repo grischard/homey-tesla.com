@@ -72,6 +72,7 @@ function stopMoving (vehicleId) {
     // update tracker
     delete vehicles[vehicleId].route
     vehicles[vehicleId].moving = false
+    module.exports.realtime({id: vehicleId, homeyDriverName: 'models'}, 'moving', false)
     Homey.manager('api').realtime('teslaLocation', vehicles[vehicleId])
 
     // handle flows
@@ -86,8 +87,8 @@ function stopMoving (vehicleId) {
       tokens,
       null,
       {id: vehicleId, homeyDriverName: 'models'},
-      function (err, result) {
-        Util.debugLog('flow trigger vehicle_stopt_moving ', {id: vehicleId, error: err, result: result})
+      function (error, result) {
+        Util.debugLog('flow trigger vehicle_stopt_moving ', {id: vehicleId, error: error, result: result})
       }
     )
   }).catch(reason => {
@@ -216,6 +217,7 @@ function processNewLocation (vehicleId, distance, location) {
       start: previousLocation
     }
     vehicles[vehicleId].route.start.time = new Date().getTime()
+    module.exports.realtime({id: vehicleId, homeyDriverName: 'models'}, 'moving', true)
     Homey.manager('flow').triggerDevice('vehicleStartMoving', {
       address: Util.createAddressSpeech(previousLocation.place, previousLocation.city),
       distance: Math.ceil(distance) || 0
@@ -258,7 +260,7 @@ var self = {
         module.exports.getSettings(device, (error, settings) => {
           if (error) Util.debugLog('Error on loading device settings', {device: device, error: error})
           var vehiclesettings = {
-            retriggerRestrictTime: settings.retriggerRestrictTime || 1,
+            retriggerRestrictTime: settings.retriggerRestrictTime || 10,
             retriggerRestrictDistance: settings.retriggerRestrictDistance || 1,
             pollInterval: settings.pollInterval || 20
           }

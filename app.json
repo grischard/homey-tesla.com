@@ -14,10 +14,6 @@
     "name":"Erik van Dongen",
     "website":"http://github.com/irritanterik/"
   },
-  "images":{
-    "large":"./assets/images/large.png",
-    "small":"./assets/images/small.png"
-  },
   "category":[
 		"tools",
 		"localization"
@@ -27,6 +23,10 @@
     "homey:manager:speech-input",
     "homey:manager:speech-output"
   ],
+  "images":{
+    "large":"./assets/images/large.png",
+    "small":"./assets/images/small.png"
+  },
   "capabilities":{
     "location": {
       "type": "string",
@@ -62,8 +62,8 @@
         "nl": "Onderweg"
       },
       "desc": {
-        "en": "Is tracker moving",
-        "nl": "Is tracker onderweg"
+        "en": "Is car moving",
+        "nl": "Is auto onderweg"
       },
       "getable": true,
       "setable": false
