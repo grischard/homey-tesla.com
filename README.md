@@ -1,6 +1,9 @@
 # Tesla
 Control your Tesla Model S
 
+If you like the app, buy me a beer!  
+[![Paypal beer button](https://www.paypalobjects.com/webstatic/en_US/i/btn/png/blue-pill-paypal-34px.png)](http://PayPal.Me/ErikvanDongen)
+
 ## Speech
 Ask the actual location of your tesla with 'Tesla [car name]' or 'What is location of [car name]'
 
